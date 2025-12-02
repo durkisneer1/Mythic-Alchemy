@@ -9,8 +9,9 @@ from core.enums import StateEnum
 class Root:
     def __init__(self):
         kn.init()
+        
         kn.window.create("Card Game", SCN_SIZE)
-        kn.time.set_target(240)
+        kn.time.set_target(60)
 
         load_card_textures()
 
