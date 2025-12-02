@@ -42,7 +42,7 @@ class FusionTable:
         if self.lhs_card is None or self.rhs_card is None:
             return
 
-        kn.renderer.draw(
-            get_card_texture(self.fusion_result.texture_index),
-            dst=self.fusion_result_rect
-        )
+        # kn.renderer.draw(
+        #     get_card_texture(self.fusion_result.texture_index),
+        #     dst=self.fusion_result_rect
+        # )
