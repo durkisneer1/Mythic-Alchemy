@@ -1,0 +1,27 @@
+{
+    "cards": [
+        {
+            "image_path": "assets/cards/Trickery.png",
+            "attack": 10,
+            "defense": 10
+        },
+        {
+            "image_path": "assets/cards/Storm.png",
+            "attack": 12,
+            "defense": 8
+        },
+        {
+            "image_path": "assets/cards/Huginn.png",
+            "attack": 8,
+            "defense": 14
+        }
+    ],
+    "fusions": [
+        {
+            "components": [0, 2],
+            "image_path": "assets/cards/Odin.png",
+            "attack": 20,
+            "defense": 20
+        }
+    ]
+}
