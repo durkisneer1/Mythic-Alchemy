@@ -29,6 +29,6 @@ class Player:
                 continue  # Skip rendering occupied card here
 
             kn.renderer.draw(
-                get_card_texture(card.texture_index),
+                get_card_texture(card.ID),
                 dst=self.to_dst(idx)
             )

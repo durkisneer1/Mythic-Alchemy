@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 @dataclass
 class Card:
-    texture_index: int
+    ID: int
     attack: int
     defense: int
     is_occupied: bool = False

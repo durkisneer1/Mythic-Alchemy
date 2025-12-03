@@ -4,20 +4,48 @@ from random import shuffle
 import json
 
 
-# Global card textures - loaded once, shared by all cards
-_card_textures: list[kn.Texture] | None = None
+Combo = tuple[int, int]
+
+_card_textures: list[kn.Texture] = []
+_fusion_table: dict[Combo, int] = {}
+
+
+def load_fusion_table() -> None:
+    global _fusion_table
+
+    if _fusion_table:
+        return  # Already loaded
+
+    with open("assets/cards.json") as f:
+        for fusion_data in json.load(f)["cards"]:
+            if fusion_data["class"] != "Fusion":
+                continue
+
+            combo = tuple(fusion_data["combo"])
+            _fusion_table[combo] = fusion_data["id"]
+
+
+def check_fusion(combo: Combo) -> int | None:
+    card_id = _fusion_table.get(combo)
+    flipped_id = _fusion_table.get((combo[1], combo[0]))
+
+    if card_id is not None:
+        return card_id
+    if flipped_id is not None:
+        return flipped_id
+
+    return None
 
 
 def load_card_textures() -> None:
     global _card_textures
 
-    if _card_textures is not None:
+    if _card_textures:
         return  # Already loaded
 
     with open("assets/cards.json") as f:
-        card_data_list = json.load(f)["cards"]
-
-    _card_textures = [kn.Texture(card_data["image_path"]) for card_data in card_data_list]
+        for card_data in json.load(f)["cards"]:
+            _card_textures.append(kn.Texture(card_data["image_path"]))
 
 
 def get_card_texture(index: int) -> kn.Texture:
@@ -29,10 +57,13 @@ def load_deck() -> list[Card]:
         card_data_list = json.load(f)["cards"]
 
     cards: list[Card] = []
-    for _ in range(3):  # 3 copies of each card for testing
-        for idx, card_data in enumerate(card_data_list):
+    for _ in range(2):  # Multiple copies of each card for testing
+        for card_data in card_data_list:
+            if card_data["class"] == "Fusion":
+                continue  # Skip fusion cards in deck loading
+
             cards.append(Card(
-                texture_index=idx,
+                ID=card_data["id"],
                 attack=card_data["attack"],
                 defense=card_data["defense"]
             ))

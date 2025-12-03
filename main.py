@@ -1,6 +1,6 @@
 import pykraken as kn
 from core.constants import SCN_SIZE
-from core.deck import load_card_textures
+from core.deck import load_card_textures, load_fusion_table
 from states.base_state import BaseState
 from states.battle_state import BattleState
 from core.enums import StateEnum
@@ -9,11 +9,12 @@ from core.enums import StateEnum
 class Root:
     def __init__(self):
         kn.init()
-        
+
         kn.window.create("Card Game", SCN_SIZE)
-        kn.time.set_target(60)
+        kn.time.set_target(240)
 
         load_card_textures()
+        load_fusion_table()
 
         self.font = kn.Font("kraken-clean", 32)
 

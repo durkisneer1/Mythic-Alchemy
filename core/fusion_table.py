@@ -1,6 +1,6 @@
 import pykraken as kn
 from core.card import Card
-from core.deck import get_card_texture
+from core.deck import get_card_texture, check_fusion
 from core.constants import CARD_SIZE, SCN_SIZE
 
 class FusionTable:
@@ -28,21 +28,38 @@ class FusionTable:
 
         if self.lhs_card is not None:
             kn.renderer.draw(
-                get_card_texture(self.lhs_card.texture_index),
+                get_card_texture(self.lhs_card.ID),
                 dst=self.lhs_rect
             )
 
+            if self.rhs_card is None:
+                # Also draw lhs in fusion result slot if rhs is empty
+                kn.renderer.draw(
+                    get_card_texture(self.lhs_card.ID),
+                    dst=self.fusion_result_rect
+                )
+
         if self.rhs_card is not None:
             kn.renderer.draw(
-                get_card_texture(self.rhs_card.texture_index),
+                get_card_texture(self.rhs_card.ID),
                 dst=self.rhs_rect
             )
+
+            if self.lhs_card is None:
+                # Also draw rhs in fusion result slot if lhs is empty
+                kn.renderer.draw(
+                    get_card_texture(self.rhs_card.ID),
+                    dst=self.fusion_result_rect
+                )
 
         # Check if fusion result can be rendered
         if self.lhs_card is None or self.rhs_card is None:
             return
 
-        # kn.renderer.draw(
-        #     get_card_texture(self.fusion_result.texture_index),
-        #     dst=self.fusion_result_rect
-        # )
+        combo = (self.lhs_card.ID, self.rhs_card.ID)
+        fused_id = check_fusion(combo)
+        if fused_id is not None:
+            kn.renderer.draw(
+                get_card_texture(fused_id),
+                dst=self.fusion_result_rect
+            )

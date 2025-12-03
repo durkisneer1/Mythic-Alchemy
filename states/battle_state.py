@@ -28,7 +28,9 @@ class BattleState(BaseState):
     def handle_event(self, event: kn.Event) -> None:
         if event.type == kn.MOUSE_BUTTON_DOWN and event.button == kn.M_LEFT:
             for idx, card in enumerate(self.player.hand):
-                if kn.collision.overlap(self.player.to_dst(idx), kn.mouse.get_pos()):
+                if (kn.collision.overlap(self.player.to_dst(idx), kn.mouse.get_pos())
+                    and not card.is_occupied
+                    ):
                     card.is_occupied = True
                     self.dragged_card = card
                     self.drag_cursor_offset = kn.mouse.get_pos() - self.player.to_dst(idx).top_left
@@ -56,7 +58,7 @@ class BattleState(BaseState):
             if self.dragged_card is None:
                 return
 
-            dropped_card_rect = get_card_texture(self.dragged_card.texture_index).get_rect()
+            dropped_card_rect = get_card_texture(self.dragged_card.ID).get_rect()
             dropped_card_rect.top_left += kn.mouse.get_pos() - self.drag_cursor_offset
 
             # Check if over any fusion slot and place in nearest one
@@ -91,7 +93,7 @@ class BattleState(BaseState):
 
         if self.dragged_card is not None:
             kn.renderer.draw(
-                get_card_texture(self.dragged_card.texture_index),
+                get_card_texture(self.dragged_card.ID),
                 pos=kn.mouse.get_pos() - self.drag_cursor_offset,
                 anchor=kn.Anchor.TOP_LEFT
             )
