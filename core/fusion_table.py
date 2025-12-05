@@ -26,31 +26,22 @@ class FusionTable:
         kn.draw.rect(self.rhs_rect, kn.color.DARK_GRAY)
         kn.draw.rect(self.fusion_result_rect, kn.color.DARK_GRAY)
 
-        if self.lhs_card is not None:
+        def draw_slot(card: Card | None, rect: kn.Rect) -> bool:
+            if card is None:
+                return False
+
+            kn.renderer.draw(get_card_texture(card.ID), dst=rect)
+            return True
+
+        lhs_present = draw_slot(self.lhs_card, self.lhs_rect)
+        rhs_present = draw_slot(self.rhs_card, self.rhs_rect)
+
+        if lhs_present ^ rhs_present:
+            solo_card = self.lhs_card or self.rhs_card
             kn.renderer.draw(
-                get_card_texture(self.lhs_card.ID),
-                dst=self.lhs_rect
+                get_card_texture(solo_card.ID),
+                dst=self.fusion_result_rect
             )
-
-            if self.rhs_card is None:
-                # Also draw lhs in fusion result slot if rhs is empty
-                kn.renderer.draw(
-                    get_card_texture(self.lhs_card.ID),
-                    dst=self.fusion_result_rect
-                )
-
-        if self.rhs_card is not None:
-            kn.renderer.draw(
-                get_card_texture(self.rhs_card.ID),
-                dst=self.rhs_rect
-            )
-
-            if self.lhs_card is None:
-                # Also draw rhs in fusion result slot if lhs is empty
-                kn.renderer.draw(
-                    get_card_texture(self.rhs_card.ID),
-                    dst=self.fusion_result_rect
-                )
 
         # Check if fusion result can be rendered
         if self.lhs_card is None or self.rhs_card is None:

@@ -1,10 +1,9 @@
 import pykraken as kn
-from core.card import Card
-from core.constants import CARD_SIZE
-from core.deck import get_card_texture
+from core.card import Card, CardLocation
 from states.base_state import BaseState
 from core.player import Player
 from core.fusion_table import FusionTable
+from core.button import Button
 
 from typing import TYPE_CHECKING, override
 if TYPE_CHECKING:
@@ -22,44 +21,48 @@ class BattleState(BaseState):
         self.fusion_table = FusionTable()
 
         self.dragged_card: Card | None = None
-        self.drag_cursor_offset = kn.Vec2(0, 0)
+
+        play_txt = kn.Text(root.font)
+        play_txt.text = "Play"
+        self.play_btn = Button(play_txt, kn.Vec2(50, 50))
 
     @override
     def handle_event(self, event: kn.Event) -> None:
         if event.type == kn.MOUSE_BUTTON_DOWN and event.button == kn.M_LEFT:
-            for idx, card in enumerate(self.player.hand):
-                if (kn.collision.overlap(self.player.to_dst(idx), kn.mouse.get_pos())
-                    and not card.is_occupied
-                    ):
-                    card.is_occupied = True
+            mouse_pos = kn.mouse.get_pos()
+            for card in self.player.hand:
+                if card.location is not CardLocation.HAND:
+                    continue
+
+                if card.contains_point(mouse_pos):
+                    card.start_drag()
                     self.dragged_card = card
-                    self.drag_cursor_offset = kn.mouse.get_pos() - self.player.to_dst(idx).top_left
                     return
 
             # Check lhs fusion slot
-            if (kn.collision.overlap(self.fusion_table.lhs_rect, kn.mouse.get_pos())
+            if (kn.collision.overlap(self.fusion_table.lhs_rect, mouse_pos)
                 and self.fusion_table.lhs_card is not None
                 ):
                 self.dragged_card = self.fusion_table.lhs_card
+                self.dragged_card.start_drag()
                 self.fusion_table.lhs_card = None
-                self.drag_cursor_offset = kn.mouse.get_pos() - self.fusion_table.lhs_rect.top_left
                 return
 
             # Check rhs fusion slot
-            if (kn.collision.overlap(self.fusion_table.rhs_rect, kn.mouse.get_pos())
+            if (kn.collision.overlap(self.fusion_table.rhs_rect, mouse_pos)
                 and self.fusion_table.rhs_card is not None
                 ):
                 self.dragged_card = self.fusion_table.rhs_card
+                self.dragged_card.start_drag()
                 self.fusion_table.rhs_card = None
-                self.drag_cursor_offset = kn.mouse.get_pos() - self.fusion_table.rhs_rect.top_left
                 return
 
         elif event.type == kn.MOUSE_BUTTON_UP and event.button == kn.M_LEFT:
             if self.dragged_card is None:
                 return
 
-            dropped_card_rect = get_card_texture(self.dragged_card.ID).get_rect()
-            dropped_card_rect.top_left += kn.mouse.get_pos() - self.drag_cursor_offset
+            self.dragged_card.update_drag_position()
+            dropped_card_rect = self.dragged_card.rect
 
             # Check if over any fusion slot and place in nearest one
             if (kn.collision.overlap(dropped_card_rect, self.fusion_table.lhs_rect)
@@ -70,30 +73,28 @@ class BattleState(BaseState):
 
                 if abs(dx_lhs) < abs(dx_rhs):
                     if self.fusion_table.lhs_card is not None:
-                        self.fusion_table.lhs_card.is_occupied = False
+                        self.fusion_table.lhs_card.return_to_hand()
+                    self.dragged_card.place_in_slot(self.fusion_table.lhs_rect)
                     self.fusion_table.lhs_card = self.dragged_card
                     self.dragged_card = None
                     return
 
                 if self.fusion_table.rhs_card is not None:
-                    self.fusion_table.rhs_card.is_occupied = False
+                    self.fusion_table.rhs_card.return_to_hand()
+                    
+                self.dragged_card.place_in_slot(self.fusion_table.rhs_rect)
                 self.fusion_table.rhs_card = self.dragged_card
                 self.dragged_card = None
                 return
 
-            self.dragged_card.is_occupied = False
+            self.dragged_card.return_to_hand()
             self.dragged_card = None
 
     @override
     def update(self) -> None:
         kn.renderer.clear()
 
-        self.player.render_hand()
-        self.fusion_table.render()
+        self.play_btn.draw()
 
-        if self.dragged_card is not None:
-            kn.renderer.draw(
-                get_card_texture(self.dragged_card.ID),
-                pos=kn.mouse.get_pos() - self.drag_cursor_offset,
-                anchor=kn.Anchor.TOP_LEFT
-            )
+        self.fusion_table.render()
+        self.player.render_hand()

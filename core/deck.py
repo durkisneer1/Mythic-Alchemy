@@ -1,7 +1,10 @@
 import pykraken as kn
-from core.card import Card
 from random import shuffle
 import json
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from core.card import Card
 
 
 Combo = tuple[int, int]
@@ -52,7 +55,9 @@ def get_card_texture(index: int) -> kn.Texture:
     return _card_textures[index]
 
 
-def load_deck() -> list[Card]:
+def load_deck() -> list["Card"]:
+    from core.card import Card
+
     with open("assets/cards.json") as f:
         card_data_list = json.load(f)["cards"]
 
