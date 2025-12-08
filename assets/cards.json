@@ -23,6 +23,13 @@
         },
         {
             "id": 3,
+            "class": "Base",
+            "image_path": "assets/cards/SacredSouls.png",
+            "attack": 7,
+            "defense": 13
+        },
+        {
+            "id": 4,
             "class": "Fusion",
             "image_path": "assets/cards/Odin.png",
             "attack": 20,

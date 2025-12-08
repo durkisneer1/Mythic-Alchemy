@@ -10,32 +10,37 @@ if TYPE_CHECKING:
 Combo = tuple[int, int]
 
 _card_textures: list[kn.Texture] = []
-_fusion_table: dict[Combo, int] = {}
+_fusion_table: dict[Combo, "Card"] = {}
 
 
 def load_fusion_table() -> None:
+    from core.card import Card
     global _fusion_table
 
     if _fusion_table:
         return  # Already loaded
 
     with open("assets/cards.json") as f:
-        for fusion_data in json.load(f)["cards"]:
-            if fusion_data["class"] != "Fusion":
+        for card_data in json.load(f)["cards"]:
+            if card_data["class"] != "Fusion":
                 continue
 
-            combo = tuple(fusion_data["combo"])
-            _fusion_table[combo] = fusion_data["id"]
+            combo = tuple(card_data["combo"])
+            _fusion_table[combo] = Card(
+                ID=card_data["id"],
+                attack=card_data["attack"],
+                defense=card_data["defense"]
+            )
 
 
-def check_fusion(combo: Combo) -> int | None:
-    card_id = _fusion_table.get(combo)
-    flipped_id = _fusion_table.get((combo[1], combo[0]))
+def check_fusion(combo: Combo) -> "Card | None":
+    card = _fusion_table.get(combo)
+    flipped_card = _fusion_table.get((combo[1], combo[0]))
 
-    if card_id is not None:
-        return card_id
-    if flipped_id is not None:
-        return flipped_id
+    if card is not None:
+        return card
+    if flipped_card is not None:
+        return flipped_card
 
     return None
 
@@ -62,7 +67,7 @@ def load_deck() -> list["Card"]:
         card_data_list = json.load(f)["cards"]
 
     cards: list[Card] = []
-    for _ in range(2):  # Multiple copies of each card for testing
+    for _ in range(2):  # Two of each card per deck
         for card_data in card_data_list:
             if card_data["class"] == "Fusion":
                 continue  # Skip fusion cards in deck loading

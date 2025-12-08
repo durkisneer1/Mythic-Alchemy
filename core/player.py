@@ -5,8 +5,8 @@ from core.constants import SCN_SIZE, CARD_SIZE
 
 
 class Player:
-    def __init__(self, health: int = 20):
-        self.health = health
+    def __init__(self):
+        self.health = 50
         self.hand: list[Card] = []
         self.deck = load_deck()
 
@@ -24,34 +24,39 @@ class Player:
         )
 
     def render_hand(self) -> None:
+        dt = kn.time.get_delta()
+
         anchored_cards = [card for card in self.hand if card.location is CardLocation.HAND]
         total = len(anchored_cards)
         mouse_pos = kn.mouse.get_pos()
 
-        layered_cards: list[Card] = []
-        base_cards: list[Card] = []
-        
-        hover_claimed = False
+        hovered_card: Card | None = None
+
+        # Position, hover detection, and motion
         for idx, card in enumerate(anchored_cards):
             card.move_to(self.to_hand_pos(idx, total))
 
-            should_hover = False
-            if not hover_claimed and card.contains_point(mouse_pos):
-                should_hover = True
-                hover_claimed = True
+            if hovered_card is None and card.contains_point(mouse_pos):
+                hovered_card = card
 
-            card.set_hovered(should_hover)
-            card.update_hand_motion()
+            card.set_hovered(card is hovered_card)
+            card.update_drag_position()
+            card.update_hand_motion(dt)
 
-            (layered_cards if card.has_hover_elevation() else base_cards).append(card)
-
-        for card in base_cards:
-            card.draw()
-        for card in layered_cards:
+        # Draw all hand cards except the hovered one
+        for card in anchored_cards:
+            if card is hovered_card:
+                continue
             card.draw()
 
+        # Draw hovered card on top
+        if hovered_card is not None:
+            hovered_card.draw()
+
+        # Dragged cards render above everything else
         for card in self.hand:
             if card.location is CardLocation.DRAG:
                 card.set_hovered(False)
-                card.update_hand_motion()
+                card.update_drag_position()
+                card.update_hand_motion(dt)
                 card.draw()

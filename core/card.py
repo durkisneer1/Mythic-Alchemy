@@ -2,20 +2,22 @@ import math
 from enum import Enum, auto
 import pykraken as kn
 from core.deck import get_card_texture
+from core.utils import exp_lerp
 
 
-HOVER_LERP = 0.2
 HOVER_RAISE = 20
 HOVER_SCALE = 1.08
 HOVER_ROTATION = math.radians(6)
 HOVER_EPSILON = 1e-3
+HOVER_SPEED = 10.0
 
-ENTRY_LERP = 0.2
 ENTRY_OFFSET = 280
 ENTRY_EPSILON = 1e-3
+ENTRY_SPEED = 8.0
 
-DRAG_TILT_MAX = math.radians(15)
-DRAG_TILT_LERP = 0.25
+DRAG_TILT_MAX = math.radians(12)
+DRAG_TILT_DAMP = 8.0
+DRAG_TILT_SENS = 0.004
 
 
 class CardLocation(Enum):
@@ -77,10 +79,13 @@ class Card:
         if self.dragging:
             self.rect.top_left = kn.mouse.get_pos() - self.drag_offset
             rel_x = kn.mouse.get_rel().x
-            target = max(-1.0, min(1.0, rel_x / 25.0)) * DRAG_TILT_MAX * self.drag_tilt_dir
-            self.drag_rotation += (target - self.drag_rotation) * DRAG_TILT_LERP
-        else:
-            self.drag_rotation *= 0.8
+
+            # impulse based on horizontal movement
+            self.drag_rotation += rel_x * DRAG_TILT_SENS * self.drag_tilt_dir
+            self.drag_rotation = max(-DRAG_TILT_MAX, min(DRAG_TILT_MAX, self.drag_rotation))
+
+        # time-based damping so it feels the same at any FPS
+        self.drag_rotation *= math.exp(-DRAG_TILT_DAMP * kn.time.get_delta())
 
     def begin_hand_entry(self) -> None:
         self.location = CardLocation.HAND
@@ -113,9 +118,9 @@ class Card:
     def set_hovered(self, hovered: bool) -> None:
         self.hover_target = 1.0 if hovered else 0.0
 
-    def update_hand_motion(self) -> None:
-        self._update_entry_motion()
-        self._update_hover_motion()
+    def update_hand_motion(self, dt: float) -> None:
+        self._update_entry_motion(dt)
+        self._update_hover_motion(dt)
 
         if self.location is CardLocation.HAND and not self.dragging:
             self.hover_offset = -HOVER_RAISE * self.hover_amount
@@ -154,32 +159,39 @@ class Card:
         self.dy = self.entry_offset
         self._sync_rect_with_anchor()
 
-    def _update_entry_motion(self) -> None:
+    def _update_entry_motion(self, dt: float) -> None:
         if self.location is not CardLocation.HAND or self.dragging:
             self.entry_progress = 0.0
             self.entry_offset = 0.0
             return
 
-        delta = self.entry_target - self.entry_progress
-        if abs(delta) < ENTRY_EPSILON:
+        self.entry_progress = exp_lerp(
+            self.entry_progress,
+            self.entry_target,
+            ENTRY_SPEED,
+            dt
+        )
+
+        if abs(self.entry_target - self.entry_progress) < ENTRY_EPSILON:
             self.entry_progress = self.entry_target
-        else:
-            self.entry_progress += delta * ENTRY_LERP
 
         self.entry_offset = ENTRY_OFFSET * self.entry_progress
 
-    def _update_hover_motion(self) -> None:
+    def _update_hover_motion(self, dt: float) -> None:
         if self.location is not CardLocation.HAND or self.dragging:
             self.hover_target = 0.0
 
-        delta = self.hover_target - self.hover_amount
-        if abs(delta) < HOVER_EPSILON:
+        self.hover_amount = exp_lerp(
+            self.hover_amount,
+            self.hover_target,
+            HOVER_SPEED,
+            dt
+        )
+
+        if abs(self.hover_target - self.hover_amount) < HOVER_EPSILON:
             self.hover_amount = self.hover_target
-        else:
-            self.hover_amount += delta * HOVER_LERP
 
     def draw(self):
-        self.update_drag_position()
         combined_rotation = self.rotation + self.drag_rotation
         prev_angle = self.texture.angle
         self.texture.angle = combined_rotation

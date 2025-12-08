@@ -37,6 +37,3 @@ class Root:
 
 if __name__ == "__main__":
     Root().run()
-
-if __name__ == "__main__":
-    Root().run()
