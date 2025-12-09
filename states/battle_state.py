@@ -9,6 +9,8 @@ from core.bot import Bot
 from core.fusion_table import FusionTable
 from core.button import Button
 from core.sequencer import Sequencer
+from core.stats import Stats
+from core.enums import StateEnum
 
 from typing import TYPE_CHECKING, override
 if TYPE_CHECKING:
@@ -20,18 +22,29 @@ class BattleState(BaseState):
         super().__init__(root)
 
         self.player = Player()
-        for _ in range(5):
-            self.player.draw_card()
-
         self.bot = Bot()
 
+        self.player_stats = Stats(
+            root.font, root.font_sm,
+            self.player.health,
+            len(self.player.deck) + len(self.player.hand),
+            "You"
+        )
+        self.bot_stats = Stats(
+            root.font, root.font_sm,
+            self.bot.health,
+            len(self.bot.deck),
+            "Bot"
+        )
+
+        self.background_tex = kn.Texture("assets/background.png")
         self.fusion_table = FusionTable()
 
         self.dragged_card: Card | None = None
 
         play_txt = kn.Text(root.font)
         play_txt.text = "Play"
-        self.play_btn = Button(play_txt, kn.Vec2(50, 50))
+        self.play_btn = Button(play_txt)
 
         self.battling = False
         self.battle_sequencer = Sequencer([
@@ -77,6 +90,13 @@ class BattleState(BaseState):
         self.bot_exit_active = False
         self.bot_exit_end = kn.Vec2()
 
+        # SFX
+        self.card_place_sfx = kn.Audio("assets/audio/card_place.wav", volume=0.5)
+        self.play_card_sfx = kn.Audio("assets/audio/play_card.wav", volume=0.2)
+        self.card_attack_sfx = kn.Audio("assets/audio/card_attack.wav", volume=0.2)
+        self.victory_sfx = kn.Audio("assets/audio/victory.wav", volume=0.3)
+        self.lose_sfx = kn.Audio("assets/audio/lose.wav", volume=0.3)
+
     @override
     def handle_event(self, event: kn.Event) -> None:
         if event.type == kn.MOUSE_BUTTON_DOWN and event.button == kn.M_LEFT:
@@ -119,6 +139,8 @@ class BattleState(BaseState):
             if (kn.collision.overlap(dropped_card_rect, self.fusion_table.lhs_rect)
                 or kn.collision.overlap(dropped_card_rect, self.fusion_table.rhs_rect)):
 
+                self.card_place_sfx.play()
+
                 dx_lhs = dropped_card_rect.x - self.fusion_table.lhs_rect.x
                 dx_rhs = dropped_card_rect.x - self.fusion_table.rhs_rect.x
 
@@ -151,8 +173,11 @@ class BattleState(BaseState):
             if self.battle_sequencer.done:
                 self.battling = False
 
-        kn.renderer.clear()
-        self.play_btn.draw()
+        kn.renderer.draw(self.background_tex, anchor=kn.Anchor.TOP_LEFT)
+        self.player_stats.render(kn.Vec2(20, 20), kn.Anchor.TOP_LEFT)
+        self.bot_stats.render(kn.Vec2(kn.renderer.get_res().x - 20, 20), kn.Anchor.TOP_RIGHT)
+
+        self.play_btn.draw(self.fusion_table.table_rect.top_mid, kn.Anchor.BOTTOM_MID)
         self.fusion_table.render()
         self._render_play_sequence()
         self.player.render_hand()
@@ -162,14 +187,20 @@ class BattleState(BaseState):
         if self.played_card is None:
             return
 
+        self.play_card_sfx.play()
+
         self.battle_sequencer.reset()
         self.battling = True
 
         # Player animation: move the fusion result to the lhs slot
-        self.play_start = kn.Vec2(self.fusion_table.fusion_result_rect.top_left.x,
-                                  self.fusion_table.fusion_result_rect.top_left.y)
-        self.play_end = kn.Vec2(self.fusion_table.lhs_rect.top_left.x,
-                                self.fusion_table.lhs_rect.top_left.y)
+        self.play_start = kn.Vec2(
+            self.fusion_table.fusion_result_rect.top_left.x,
+            self.fusion_table.fusion_result_rect.top_left.y
+        )
+        self.play_end = kn.Vec2(
+            self.fusion_table.lhs_rect.top_left.x,
+            self.fusion_table.lhs_rect.top_left.y
+        )
         self.play_anim.start_pos = self.play_start
         self.play_anim.end_pos = self.play_end
         self.play_anim.restart()
@@ -179,12 +210,15 @@ class BattleState(BaseState):
         self.bot_played_card = self.bot.draw_card()
         if self.bot_played_card is not None:
             self.bot_start = kn.Vec2(SCN_SIZE.x + CARD_SIZE.x, self.fusion_table.fusion_result_rect.top_left.y)
-            self.bot_end = kn.Vec2(self.fusion_table.fusion_result_rect.top_left.x,
-                                   self.fusion_table.fusion_result_rect.top_left.y)
+            self.bot_end = kn.Vec2(
+                self.fusion_table.fusion_result_rect.top_left.x,
+                self.fusion_table.fusion_result_rect.top_left.y
+            )
             self.bot_anim.start_pos = self.bot_start
             self.bot_anim.end_pos = self.bot_end
             self.bot_anim.restart()
             self.bot_play_rect.top_left = self.bot_start
+            self.bot_stats.set_deck_size(len(self.bot.deck))
 
         # Reset shake state for this battle resolution
         self.shake_phase = "idle"
@@ -285,13 +319,15 @@ class BattleState(BaseState):
         if phase == "player" and not self.player_attack_done and self.played_card and self.bot_played_card:
             dmg_to_bot = max(0, self.played_card.attack - self.bot_played_card.defense)
             self.bot.health -= dmg_to_bot
+            self.bot_stats.set_health(self.bot.health)
             self.player_attack_done = True
-            print(f"Player deals {dmg_to_bot} damage to Bot! Bot health: {self.bot.health}")
         elif phase == "bot" and not self.bot_attack_done and self.played_card and self.bot_played_card:
             dmg_to_player = max(0, self.bot_played_card.attack - self.played_card.defense)
             self.player.health -= dmg_to_player
+            self.player_stats.set_health(self.player.health)
             self.bot_attack_done = True
-            print(f"Bot deals {dmg_to_player} damage to Player! Player health: {self.player.health}")
+
+        self.card_attack_sfx.play()
 
     # Sequencer callbacks
     def _seq_start_travel(self) -> None:
@@ -334,6 +370,7 @@ class BattleState(BaseState):
         draws = max(1, min(2, self.cards_used_count)) if self.cards_used_count > 0 else 0
         for _ in range(draws):
             self.player.draw_card()
+        self.player_stats.set_deck_size(len(self.player.deck) + len(self.player.hand))
 
     def _seq_finish_round(self) -> None:
         self.shake_phase = "done"
@@ -347,3 +384,25 @@ class BattleState(BaseState):
         # Clear references to prevent stale rendering
         self.played_card = None
         self.bot_played_card = None
+
+        # Refresh deck counts (total cards for player, deck only for bot)
+        self.player_stats.set_deck_size(len(self.player.deck) + len(self.player.hand))
+        self.bot_stats.set_deck_size(len(self.bot.deck))
+
+        # Transition checks
+        if self.player.health <= 0:
+            self.root.theme_music.stop(fade_out_ms=500)
+            self.lose_sfx.play()
+            self.root.current_state = StateEnum.LOSE
+            return
+        if self.bot.health <= 0:
+            self.root.theme_music.stop(fade_out_ms=500)
+            self.victory_sfx.play()
+            self.root.current_state = StateEnum.WIN
+            return
+
+        player_cards_left = len(self.player.deck) + len(self.player.hand)
+        bot_cards_left = len(self.bot.deck) + len(self.bot.hand)
+        if player_cards_left == 0 or bot_cards_left == 0:
+            self.root.theme_music.stop(fade_out_ms=500)
+            self.root.current_state = StateEnum.STALE

@@ -27,12 +27,19 @@ class CardLocation(Enum):
 
 
 class Card:
+    card_shadow : kn.Texture | None = None
+    shadow_rect : kn.Rect | None = None
+
     def __init__(
         self,
         ID: int,
         attack: int,
         defense: int
     ):
+        if Card.card_shadow is None:
+            Card.card_shadow = kn.Texture("assets/cards/card_shadow.png")
+            Card.shadow_rect = Card.card_shadow.get_rect()
+
         self.ID = ID
         self.attack = attack
         self.defense = defense
@@ -57,6 +64,17 @@ class Card:
         self.entry_offset = 0.0
         self.drag_rotation = 0.0
         self.drag_tilt_dir = 1.0
+
+    def draw_shadow(self) -> None:
+        combined_rotation = self.rotation + self.drag_rotation
+
+        scaled_shadow_rect = kn.rect.scale_by(Card.shadow_rect, self.scale)
+        scaled_shadow_rect.center = self.rect.center
+
+        prev_angle = Card.card_shadow.angle
+        Card.card_shadow.angle = combined_rotation
+        kn.renderer.draw(Card.card_shadow, dst=scaled_shadow_rect)
+        Card.card_shadow.angle = prev_angle
 
     def set_drag(self, drag: bool):
         self.dragging = drag

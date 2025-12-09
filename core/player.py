@@ -4,11 +4,18 @@ from core.deck import load_deck
 from core.constants import SCN_SIZE, CARD_SIZE
 
 
+# Horizontal gap between cards in hand for readability
+HAND_GAP = 8
+
+
 class Player:
     def __init__(self):
         self.health = 50
         self.hand: list[Card] = []
         self.deck = load_deck()
+
+        for _ in range(5):
+            self.draw_card()
 
     def draw_card(self) -> None:
         if self.deck:
@@ -17,9 +24,10 @@ class Player:
             card.begin_hand_entry()
 
     def to_hand_pos(self, idx: int, count: int) -> kn.Vec2:
-        x_offset = (SCN_SIZE.x - (count * CARD_SIZE.x)) / 2
+        total_width = count * CARD_SIZE.x + max(0, count - 1) * HAND_GAP
+        x_offset = (SCN_SIZE.x - total_width) / 2
         return kn.Vec2(
-            x_offset + idx * CARD_SIZE.x,
+            x_offset + idx * (CARD_SIZE.x + HAND_GAP),
             SCN_SIZE.y - CARD_SIZE.y - 50
         )
 
@@ -43,6 +51,10 @@ class Player:
             card.update_drag_position()
             card.update_hand_motion(dt)
 
+        # Draw shadows for all anchored hand cards first
+        for card in anchored_cards:
+            card.draw_shadow()
+
         # Draw all hand cards except the hovered one
         for card in anchored_cards:
             if card is hovered_card:
@@ -59,4 +71,5 @@ class Player:
                 card.set_hovered(False)
                 card.update_drag_position()
                 card.update_hand_motion(dt)
+                card.draw_shadow()
                 card.draw()
