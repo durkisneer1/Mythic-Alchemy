@@ -30,11 +30,55 @@
         },
         {
             "id": 4,
+            "class": "Base",
+            "image_path": "assets/cards/UndyingFlame.png",
+            "attack": 13,
+            "defense": 6
+        },
+        {
+            "id": 5,
+            "class": "Base",
+            "image_path": "assets/cards/Mead.png",
+            "attack": 15,
+            "defense": 2
+        },
+        {
+            "id": 6,
+            "class": "Base",
+            "image_path": "assets/cards/TyrShield.png",
+            "attack": 2,
+            "defense": 15
+        },
+        {
+            "id": 7,
+            "class": "Base",
+            "image_path": "assets/cards/Bifrost.png",
+            "attack": 9,
+            "defense": 7
+        },
+        {
+            "id": 8,
             "class": "Fusion",
             "image_path": "assets/cards/Odin.png",
             "attack": 20,
             "defense": 20,
             "combo": [0, 2]
+        },
+        {
+            "id": 9,
+            "class": "Fusion",
+            "image_path": "assets/cards/MimirWisdom.png",
+            "attack": 21,
+            "defense": 18,
+            "combo": [2, 7]
+        },
+        {
+            "id": 10,
+            "class": "Fusion",
+            "image_path": "assets/cards/Tyr.png",
+            "attack": 15,
+            "defense": 20,
+            "combo": [6, 7]
         }
     ]
 }

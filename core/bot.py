@@ -6,7 +6,7 @@ from core.deck import load_deck, get_card_texture
 
 class Bot:
     def __init__(self):
-        self.health = 50
+        self.health = 30
         self.deck = load_deck()
         self.hand: list[Card] = []
         self.played_card: Card | None = None
