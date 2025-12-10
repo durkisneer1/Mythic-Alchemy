@@ -59,13 +59,21 @@
         {
             "id": 8,
             "class": "Fusion",
+            "image_path": "assets/cards/HelSpirits.png",
+            "attack": 24,
+            "defense": 6,
+            "combo": [3, 4]
+        },
+        {
+            "id": 9,
+            "class": "Fusion",
             "image_path": "assets/cards/Odin.png",
             "attack": 20,
             "defense": 20,
             "combo": [0, 2]
         },
         {
-            "id": 9,
+            "id": 10,
             "class": "Fusion",
             "image_path": "assets/cards/MimirWisdom.png",
             "attack": 21,
@@ -73,7 +81,15 @@
             "combo": [2, 7]
         },
         {
-            "id": 10,
+            "id": 11,
+            "class": "Fusion",
+            "image_path": "assets/cards/Heimdall.png",
+            "attack": 20,
+            "defense": 15,
+            "combo": [5, 7]
+        },
+        {
+            "id": 12,
             "class": "Fusion",
             "image_path": "assets/cards/Tyr.png",
             "attack": 15,

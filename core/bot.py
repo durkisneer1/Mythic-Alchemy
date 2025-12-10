@@ -1,7 +1,8 @@
 import pykraken as kn
+from random import random, shuffle
 from core.card import Card
 from core.constants import CARD_SIZE, SCN_SIZE
-from core.deck import load_deck, get_card_texture
+from core.deck import load_deck, get_card_texture, check_fusion
 
 
 class Bot:
@@ -19,6 +20,12 @@ class Bot:
         if not self.deck:
             self.played_card = None
             return None
+
+        fused_card = self._maybe_fuse_from_deck()
+        if fused_card is not None:
+            self.hand.append(fused_card)
+            self.played_card = fused_card
+            return fused_card
 
         card = self.deck.pop()
         self.hand.append(card)
@@ -38,3 +45,30 @@ class Bot:
             return
 
         kn.renderer.draw(get_card_texture(self.played_card.ID), dst=self.play_rect)
+
+    def _maybe_fuse_from_deck(self) -> Card | None:
+        if len(self.deck) < 2:
+            return None
+
+        if random() >= 0.5:
+            return None
+
+        indices = list(range(len(self.deck)))
+        shuffle(indices)
+
+        for i, first in enumerate(indices):
+            for second in indices[i + 1:]:
+                fusion = check_fusion((self.deck[first].ID, self.deck[second].ID))
+                if fusion is None:
+                    continue
+
+                for idx in sorted((first, second), reverse=True):
+                    self.deck.pop(idx)
+
+                return Card(
+                    ID=fusion.ID,
+                    attack=fusion.attack,
+                    defense=fusion.defense
+                )
+
+        return None
