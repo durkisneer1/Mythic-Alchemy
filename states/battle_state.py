@@ -390,13 +390,18 @@ class BattleState(BaseState):
         self.bot_stats.set_deck_size(len(self.bot.deck))
 
         # Transition checks
+        if self.player.health <= 0 and self.bot.health <= 0:
+            self.root.theme_music.pause()
+            self.root.current_state = StateEnum.STALE
+            return
+
         if self.player.health <= 0:
-            self.root.theme_music.stop(fade_out_ms=500)
+            self.root.theme_music.pause()
             self.lose_sfx.play()
             self.root.current_state = StateEnum.LOSE
             return
         if self.bot.health <= 0:
-            self.root.theme_music.stop(fade_out_ms=500)
+            self.root.theme_music.pause()
             self.victory_sfx.play()
             self.root.current_state = StateEnum.WIN
             return
@@ -404,5 +409,5 @@ class BattleState(BaseState):
         player_cards_left = len(self.player.deck) + len(self.player.hand)
         bot_cards_left = len(self.bot.deck) + len(self.bot.hand)
         if player_cards_left == 0 or bot_cards_left == 0:
-            self.root.theme_music.stop(fade_out_ms=500)
+            self.root.theme_music.pause()
             self.root.current_state = StateEnum.STALE

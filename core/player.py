@@ -10,7 +10,7 @@ HAND_GAP = 8
 
 class Player:
     def __init__(self):
-        self.health = 30
+        self.health = 50
         self.hand: list[Card] = []
         self.deck = load_deck()
 

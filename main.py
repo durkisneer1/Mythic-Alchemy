@@ -15,6 +15,7 @@ class Root:
         kn.init()
 
         kn.window.create("Mythic Alchemy", SCN_SIZE)
+        kn.window.set_icon("assets/icon.png")
         # kn.window.set_fullscreen(True)
         kn.time.set_target(240)
 

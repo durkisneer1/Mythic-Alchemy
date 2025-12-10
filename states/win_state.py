@@ -46,12 +46,14 @@ class WinState(BaseState):
             # Recreate battle state to reset state cleanly
             self.root.states[StateEnum.BATTLE] = self.root._make_battle_state()
             self.root.current_state = StateEnum.BATTLE
-            self.root.theme_music.play(loop=True)
+            self.root.theme_music.rewind()
+            self.root.theme_music.resume()
             return
 
         if self.menu_btn.is_clicked():
             self.root.current_state = StateEnum.MENU
-            self.root.theme_music.play(loop=True)
+            self.root.theme_music.rewind()
+            self.root.theme_music.resume()
             return
 
         kn.renderer.draw(self.bg_tex, anchor=kn.Anchor.TOP_LEFT)
